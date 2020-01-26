@@ -7,11 +7,13 @@ namespace LagGridBroadcaster
     {
         private readonly LagGridBroadcasterPlugin _plugin;
 
-        private LagGridBroadcasterControl() {
+        private LagGridBroadcasterControl()
+        {
             InitializeComponent();
         }
 
-        public LagGridBroadcasterControl(LagGridBroadcasterPlugin plugin) : this() {
+        public LagGridBroadcasterControl(LagGridBroadcasterPlugin plugin) : this()
+        {
             _plugin = plugin;
             DataContext = plugin.Config;
         }

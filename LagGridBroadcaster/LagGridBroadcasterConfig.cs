@@ -9,7 +9,7 @@ namespace LagGridBroadcaster
         private ulong _factionMemberDistance = 1000;
         private uint _factionTop = 3;
         private uint _playerMinUs;
-        private bool _writeToFile=true;
+        private bool _writeToFile = true;
 
         public uint Top
         {
@@ -22,6 +22,8 @@ namespace LagGridBroadcaster
             get => _minUs;
             set => SetValue(ref _minUs, value);
         }
+
+        public double MinMs => _minUs / 1000D;
 
         public ulong FactionMemberDistance
         {
@@ -40,6 +42,8 @@ namespace LagGridBroadcaster
             get => _playerMinUs;
             set => SetValue(ref _playerMinUs, value);
         }
+
+        public double PlayerMinMs => _playerMinUs / 1000D;
 
         public bool WriteToFile
         {
