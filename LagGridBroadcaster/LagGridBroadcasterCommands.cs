@@ -80,6 +80,7 @@ namespace LagGridBroadcaster
 
         [Command("get", "Get latest result of the grid you're currently controlling")]
         [Permission(MyPromoteLevel.None)]
+        // ReSharper disable once UnusedMember.Global
         public void Get()
         {
             var entity = Context.Player?.Controller?.ControlledEntity?.Entity;
@@ -127,20 +128,23 @@ namespace LagGridBroadcaster
 
         private void OnProfilerRequestFinished(bool _, ProfilerRequest.Result[] results)
         {
-            var now = DateTime.UtcNow;
-            var noneZeroResults = results.Where(it => it.MsPerTick > 0).ToArray();
-            var tuples = noneZeroResults.Select(result =>
+            var tuples = results.Where(it => it.MsPerTick > 0)
+                .Where(it => it.Description != null)
+                .Where(it => it.Position != null)
+                .Select(result =>
                 {
                     var entityId = Convert.ToInt64(result.Description.SubstringAfter('='));
-                    var grid = (MyCubeGrid) MyEntities.GetEntityById(entityId);
-                    var gridOwner = grid.BigOwners.FirstOrDefault(it => it != 0); //maybe 0
+                    var grid = MyEntities.GetEntityById(entityId) as MyCubeGrid; //maybe null if entityId is 0
+                    var gridOwner = grid?.BigOwners.FirstOrDefault(it => it != 0) ?? 0; //maybe 0
                     var identity = MySession.Static.Players.TryGetIdentity(gridOwner); //maybe null if gridOwner is 0
                     TryGetPlayerById(gridOwner, out var player); //may be null if gridOwner is 0
-                    var faction = MySession.Static.Factions
-                        .GetPlayerFaction(gridOwner); //maybe null if gridOwner is 0 or player not join faction
+                    //maybe null if gridOwner is 0 or player not join faction
+                    var faction = MySession.Static.Factions.GetPlayerFaction(gridOwner);
                     return (result, entityId, grid, gridOwner, identity, player, faction);
                 })
+                .Where(it => it.entityId != 0)
                 .ToArray();
+            var now = DateTime.UtcNow;
             Plugin.LatestResults = tuples.Select(it => (it.entityId, it.result)).ToArray();
             Plugin.LatestMeasureTime = now;
 
@@ -173,8 +177,7 @@ namespace LagGridBroadcaster
             //send globalTop to all players
             if (Config.Top != 0)
             {
-                var globalTop = tuples.Where(it => it.result.Position != null)
-                    .Where(it => it.result.MsPerTick > Config.MinMs)
+                var globalTop = tuples.Where(it => it.result.MsPerTick > Config.MinMs)
                     .Where(tuple =>
                     {
                         var distance = Config.FactionMemberDistance;
@@ -184,13 +187,13 @@ namespace LagGridBroadcaster
                         if (faction == null)
                             // ReSharper disable once PossibleInvalidOperationException
                             return player != null &&
-                                   Vector3.Distance((Vector3) result.Position, player.GetPosition()) < distance;
+                                   Vector3.Distance(result.Position.Value, player.GetPosition()) < distance;
                         //npc faction
                         if (faction.FactionType != MyFactionTypes.PlayerMade) return true;
                         return faction.Members.Keys.Any(it =>
                             TryGetPlayerById(it, out var outPlayer) &&
                             // ReSharper disable once PossibleInvalidOperationException
-                            Vector3.Distance((Vector3) result.Position, outPlayer.GetPosition()) < distance
+                            Vector3.Distance(result.Position.Value, outPlayer.GetPosition()) < distance
                         );
                     })
                     .Take((int) Config.Top)
@@ -236,9 +239,9 @@ namespace LagGridBroadcaster
                     );
                     if (Config.MinUs != 0)
                     {
-                        factionTopResults.Where(it => it.MsPerTick < Config.MinMs && it.MsPerTick > Config.MinMs * 0.8)
+                        factionTopResults.Where(it => it.MsPerTick < Config.MinMs && it.MsPerTick > Config.MinMs * 0.75)
                             .ForEach(it => SendNotificationTo(
-                                $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({Config.MinUs}us)",
+                                $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({FormatTime(Config.PlayerMinMs)})",
                                 steamId
                             ));
                     }
@@ -287,12 +290,13 @@ namespace LagGridBroadcaster
 
         private void Broadcast(ProfilerRequest.Result result)
         {
-            if (MyAPIGateway.Session == null || result.Position == null) return;
+            if (MyAPIGateway.Session == null) return;
             var gpsName = FormatResult(result);
             var gps = new MyGps(new MyObjectBuilder_Gps.Entry
             {
                 name = gpsName,
                 DisplayName = gpsName,
+                // ReSharper disable once PossibleInvalidOperationException
                 coords = result.Position.Value,
                 showOnHud = true,
                 color = Color.Purple,
