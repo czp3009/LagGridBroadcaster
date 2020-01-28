@@ -16,7 +16,7 @@ namespace LagGridBroadcaster
         public string FactionName { get; set; }
     }
 
-    public class MeasureResultsFile
+    public class MeasureResultsAndTime
     {
         public MeasureResult[] MeasureResults { get;  set; }
         public DateTime DateTime { get;  set; }

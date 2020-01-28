@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using NLog;
 using Profiler.Core;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Screens.Helpers;
@@ -26,6 +28,8 @@ namespace LagGridBroadcaster
     // ReSharper disable once UnusedType.Global
     public class LagGridBroadcasterCommands : CommandModule
     {
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
         private LagGridBroadcasterPlugin Plugin => (LagGridBroadcasterPlugin) Context.Plugin;
         private LagGridBroadcasterConfig Config => Plugin.Config;
 
@@ -55,7 +59,18 @@ namespace LagGridBroadcaster
             //send request
             CleanGps();
             var profilerRequest = new ProfilerRequest(ProfilerRequestType.Grid, ticks);
-            profilerRequest.OnFinished += OnProfilerRequestFinished;
+            profilerRequest.OnFinished += (_, results) =>
+            {
+                try
+                {
+                    OnProfilerRequestFinished(results);
+                }
+                catch (Exception e)
+                {
+                    Context.Respond($"Error occured: {e.Message}");
+                    Log.Error(e);
+                }
+            };
             Context.Respond($"Measure {ticks} ticks");
             ProfilerDataProxy.Submit(profilerRequest);
         }
@@ -126,11 +141,11 @@ namespace LagGridBroadcaster
             });
         }
 
-        private void OnProfilerRequestFinished(bool _, ProfilerRequest.Result[] results)
+        private void OnProfilerRequestFinished(IEnumerable<ProfilerRequest.Result> results)
         {
             var tuples = results.Where(it => it.MsPerTick > 0)
-                .Where(it => it.Description != null)
-                .Where(it => it.Position != null)
+                .Where(it => it.Description != null) //i don't know why description can be null
+                .Where(it => it.Position != null) //position may be null but i can't understand
                 .Select(result =>
                 {
                     var entityId = Convert.ToInt64(result.Description.SubstringAfter('='));
@@ -161,16 +176,21 @@ namespace LagGridBroadcaster
                         FactionId = faction?.FactionId, FactionName = faction?.Name
                     };
                 }).ToArray();
-                var measureResultsFile = new MeasureResultsFile
+                var measureResultsAndTime = new MeasureResultsAndTime
                 {
                     MeasureResults = measureResults, DateTime = now
                 };
-                var persistent = new Persistent<MeasureResultsFile>(
-                    Path.Combine(Plugin.StoragePath, "LagGridBroadcasterMeasureResult.xml"),
-                    measureResultsFile
+                var persistent = new Persistent<MeasureResultsAndTime>(
+                    Path.Combine(
+                        Plugin.StoragePath,
+                        Config.ResultFileName.Length != 0
+                            ? Config.ResultFileName
+                            : LagGridBroadcasterConfig.ResultFileDefaultName
+                    ),
+                    measureResultsAndTime
                 );
-                //simply run in another thread
-                new Thread(() => persistent.Save()).Start();
+                //simply run in thread pool
+                Task.Run(() => persistent.Save());
             }
 
             var prepareToBroadcast = new List<ProfilerRequest.Result>();

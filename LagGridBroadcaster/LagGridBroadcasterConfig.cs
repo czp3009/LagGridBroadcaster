@@ -10,6 +10,8 @@ namespace LagGridBroadcaster
         private uint _factionTop = 3;
         private uint _playerMinUs;
         private bool _writeToFile = true;
+        public const string ResultFileDefaultName = "LagGridBroadcasterMeasureResult.xml";
+        private string _resultFileName = ResultFileDefaultName;
 
         public uint Top
         {
@@ -49,6 +51,12 @@ namespace LagGridBroadcaster
         {
             get => _writeToFile;
             set => SetValue(ref _writeToFile, value);
+        }
+
+        public string ResultFileName
+        {
+            get => _resultFileName;
+            set => SetValue(ref _resultFileName,value);
         }
     }
 }
