@@ -3,7 +3,7 @@ using VRage.Game.ModAPI;
 
 namespace LagGridBroadcaster
 {
-    public class GpsComparer : IEqualityComparer<IMyGps>
+    internal class GpsComparer : IEqualityComparer<IMyGps>
     {
         public bool Equals(IMyGps x, IMyGps y)
         {

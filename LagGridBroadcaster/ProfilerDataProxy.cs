@@ -7,7 +7,7 @@ using VRage.Game;
 namespace LagGridBroadcaster
 {
     // ReSharper disable once ClassNeverInstantiated.Global
-    public class ProfilerDataProxy
+    internal class ProfilerDataProxy
     {
         private static readonly Type ProfilerData = Assembly.GetAssembly(typeof(ProfilerPlugin))
             .GetType("Profiler.Core.ProfilerData");

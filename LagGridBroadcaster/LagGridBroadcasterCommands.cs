@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
@@ -227,45 +226,52 @@ namespace LagGridBroadcaster
                 prepareToBroadcast.AddRange(globalTop.Select(it => it.result));
             }
 
-            //send factionTop to faction member
+            //send factionTop to faction members
             if (Config.FactionTop != 0)
             {
                 var factionResults = new Dictionary<long, List<ProfilerRequest.Result>>(); //factionId to results
                 var noFactionResults = new Dictionary<long, List<ProfilerRequest.Result>>(); //playerId to results
-                tuples.Where(it => it.gridOwner != 0)
+                tuples.Where(it => it.gridOwner != 0) //except Nobody' grid
                     .ForEach(tuple =>
                     {
                         var (result, _, _, gridOwner, _, _, faction) = tuple;
                         if (faction != null)
-                            factionResults.AddOrUpdate(faction.FactionId, result);
+                            factionResults.AddOrUpdateList(faction.FactionId, result);
                         else
-                            noFactionResults.AddOrUpdate(gridOwner, result);
+                            noFactionResults.AddOrUpdateList(gridOwner, result);
                     });
-                MySession.Static.Players.GetOnlinePlayers().ForEach(player =>
-                {
-                    var playerId = player.Identity.IdentityId;
-                    var faction = MySession.Static.Factions.GetPlayerFaction(playerId);
-                    var factionTopResults =
-                        faction != null ? factionResults[faction.FactionId] : noFactionResults[playerId];
-                    var steamId = player.Id.SteamId;
-                    // ReSharper disable once UseStringInterpolation
-                    SendMessage(string.Format("Faction top {0} grids:",
-                        factionTopResults.Count < Config.FactionTop
-                            ? $"{factionTopResults.Count}/{Config.FactionTop}"
-                            : Config.FactionTop.ToString()
-                    ), steamId);
-                    factionTopResults.Take((int) Config.FactionTop).ForEach(it =>
-                        SendMessage(FormatResult(it), steamId)
-                    );
-                    if (Config.MinUs != 0)
+                MySession.Static.Players.GetOnlinePlayers().Where(it => it.IsRealPlayer)
+                    .ForEach(player =>
                     {
-                        factionTopResults.Where(it => it.MsPerTick < Config.MinMs && it.MsPerTick > Config.MinMs * 0.75)
-                            .ForEach(it => SendNotificationTo(
-                                $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({FormatTime(Config.PlayerMinMs)})",
-                                steamId
-                            ));
-                    }
-                });
+                        var playerId = player.Identity.IdentityId;
+                        var faction = MySession.Static.Factions.GetPlayerFaction(playerId);
+                        //player may don't have any grid
+                        var factionTopResults =
+                            faction != null
+                                ? factionResults.GetValueOrDefault(faction.FactionId) ??
+                                  Enumerable.Empty<ProfilerRequest.Result>().ToList()
+                                : noFactionResults.GetValueOrDefault(playerId) ??
+                                  Enumerable.Empty<ProfilerRequest.Result>().ToList();
+                        var steamId = player.Id.SteamId;
+                        // ReSharper disable once UseStringInterpolation
+                        SendMessage(string.Format("Faction top {0} grids:",
+                            factionTopResults.Count < Config.FactionTop
+                                ? $"{factionTopResults.Count}/{Config.FactionTop}"
+                                : Config.FactionTop.ToString()
+                        ), steamId);
+                        factionTopResults.Take((int) Config.FactionTop).ForEach(it =>
+                            SendMessage(FormatResult(it), steamId)
+                        );
+                        if (Config.MinUs != 0)
+                        {
+                            factionTopResults
+                                .Where(it => it.MsPerTick < Config.MinMs && it.MsPerTick > Config.MinMs * 0.75)
+                                .ForEach(it => SendNotificationTo(
+                                    $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({FormatTime(Config.PlayerMinMs)})",
+                                    steamId
+                                ));
+                        }
+                    });
             }
 
             //broadcast player's most lag grid
@@ -274,23 +280,24 @@ namespace LagGridBroadcaster
                 var playerResultsLoopUp = tuples.Where(it => it.gridOwner != 0)
                     .ToLookup(it => it.gridOwner, it => it.result);
                 var needBroadcast = new List<(MyPlayer, ProfilerRequest.Result)>();
-                MySession.Static.Players.GetOnlinePlayers().ForEach(player =>
-                {
-                    var playerResults = playerResultsLoopUp[player.Identity.IdentityId].ToArray();
-                    var totalMs = playerResults.Sum(it => it.MsPerTick);
-                    var steamId = player.Id.SteamId;
-                    SendMessage(
-                        $"Your grids total took {FormatTime(totalMs)}(server limit {FormatTime(Config.PlayerMinMs)})",
-                        steamId
-                    );
-                    // ReSharper disable once InvertIf
-                    if (totalMs > Config.PlayerMinMs && playerResults.Length > 0)
+                MySession.Static.Players.GetOnlinePlayers().Where(it => it.IsRealPlayer)
+                    .ForEach(player =>
                     {
-                        var mostLagGrid = playerResults[0];
-                        SendMessage($"Your most lag grid '{mostLagGrid.Name}' will be broadcast", steamId);
-                        needBroadcast.Add((player, mostLagGrid));
-                    }
-                });
+                        var playerResults = playerResultsLoopUp[player.Identity.IdentityId].ToArray();
+                        var totalMs = playerResults.Sum(it => it.MsPerTick);
+                        var steamId = player.Id.SteamId;
+                        SendMessage(
+                            $"Your grids total took {FormatTime(totalMs)}(server limit {FormatTime(Config.PlayerMinMs)})",
+                            steamId
+                        );
+                        // ReSharper disable once InvertIf
+                        if (totalMs > Config.PlayerMinMs && playerResults.Length > 0)
+                        {
+                            var mostLagGrid = playerResults[0];
+                            SendMessage($"Your most lag grid '{mostLagGrid.Name}' will be broadcast", steamId);
+                            needBroadcast.Add((player, mostLagGrid));
+                        }
+                    });
                 needBroadcast.ForEach(tuple =>
                 {
                     var (player, result) = tuple;
@@ -301,8 +308,7 @@ namespace LagGridBroadcaster
                 prepareToBroadcast.AddRange(needBroadcast.Select(it => it.Item2));
             }
 
-            var distinctPrepareToBroadcast = prepareToBroadcast.GroupBy(it => it.Description)
-                .Select(it => it.First()).ToArray();
+            var distinctPrepareToBroadcast = prepareToBroadcast.Distinct(new ResultComparer()).ToArray();
             if (distinctPrepareToBroadcast.Length != 0)
                 SendNotification($"Total {distinctPrepareToBroadcast.Length} grids being broadcast");
             distinctPrepareToBroadcast.ForEach(Broadcast);
@@ -324,13 +330,14 @@ namespace LagGridBroadcaster
                 entityId = 0,
                 isFinal = false
             });
-            MySession.Static.Players.GetOnlinePlayers().ForEach(it =>
-            {
-                var identityId = it.Identity.IdentityId;
-                MyAPIGateway.Session.GPS.AddGps(identityId, gps);
-                var list = Plugin.AddedGps.GetOrAdd(identityId, _ => new List<IMyGps>());
-                lock (list) list.Add(gps);
-            });
+            MySession.Static.Players.GetOnlinePlayers().Where(it => it.IsRealPlayer)
+                .ForEach(it =>
+                {
+                    var identityId = it.Identity.IdentityId;
+                    MyAPIGateway.Session.GPS.AddGps(identityId, gps);
+                    var list = Plugin.AddedGps.GetOrAdd(identityId, _ => new List<IMyGps>());
+                    lock (list) list.Add(gps);
+                });
         }
 
         private void SendMessage(string message, ulong targetSteamId = 0)
@@ -396,12 +403,12 @@ namespace LagGridBroadcaster
 
         private static string FormatTime(double ms)
         {
-            if (ms > 1000)
+            if (ms >= 1000)
                 return $"{ms / 1000:F3}s";
-            if (ms > 1)
+            if (ms >= 1)
                 return $"{ms:F3}ms";
             ms *= 1000;
-            if (ms > 1)
+            if (ms >= 1)
                 return $"{ms:F0}us";
             ms *= 1000;
             return $"{ms:F0}ns";
