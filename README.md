@@ -26,5 +26,7 @@ This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2
 
 `WriteToFile` Write measure result to file
 
+`ResultFileName` Result file name
+
 # License
 Apache License 2.0
