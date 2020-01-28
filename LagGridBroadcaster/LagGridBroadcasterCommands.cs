@@ -403,9 +403,9 @@ namespace LagGridBroadcaster
 
         private static string FormatTime(double ms)
         {
-            if (ms >= 1000)
+            if (ms > 1000)
                 return $"{ms / 1000:F3}s";
-            if (ms >= 1)
+            if (ms > 1)
                 return $"{ms:F3}ms";
             ms *= 1000;
             if (ms >= 1)

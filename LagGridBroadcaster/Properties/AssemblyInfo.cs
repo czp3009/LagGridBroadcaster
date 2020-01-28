@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("LagGridBroadcaster")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A Torch plugin that can broadcast most lag grid to all players")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("czp3009")]
 [assembly: AssemblyProduct("LagGridBroadcaster")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
