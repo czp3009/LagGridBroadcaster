@@ -11,14 +11,14 @@ namespace LagGridBroadcaster
         public string EntityName { get; set; }
         public double MsPerTick { get; set; }
         public long PlayerId { get; set; }
-        public string PlayerDisplayName { get;  set;}
-        public long? FactionId { get;  set;}
+        public string PlayerDisplayName { get; set; }
+        public long? FactionId { get; set; }
         public string FactionName { get; set; }
     }
 
     public class MeasureResultsAndTime
     {
-        public MeasureResult[] MeasureResults { get;  set; }
-        public DateTime DateTime { get;  set; }
+        public MeasureResult[] MeasureResults { get; set; }
+        public DateTime DateTime { get; set; }
     }
 }

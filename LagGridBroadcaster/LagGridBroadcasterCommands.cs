@@ -49,7 +49,7 @@ namespace LagGridBroadcaster
             }
 
             //change mask
-            if (!ProfilerDataProxy.ChangeMask(null, null, null, MyModContext.BaseGame))
+            if (!ProfilerDataProxy.ChangeMask(null, null, null, null))
             {
                 Context.Respond("Failed to change profiling mask.  There can only be one.");
                 return;
