@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("LagGridBroadcaster")]
 [assembly: AssemblyDescription("A Torch plugin that can broadcast most lag grid to all players")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("czp3009")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("LagGridBroadcaster")]
-[assembly: AssemblyCopyright("Copyright ©  2020")]
+[assembly: AssemblyCopyright("Copyright czp3009@gmail.com")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
