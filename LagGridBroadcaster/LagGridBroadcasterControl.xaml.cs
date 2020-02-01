@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace LagGridBroadcaster
 {
-    public partial class LagGridBroadcasterControl : UserControl
+    public partial class LagGridBroadcasterControl 
     {
         private readonly LagGridBroadcasterPlugin _plugin;
 

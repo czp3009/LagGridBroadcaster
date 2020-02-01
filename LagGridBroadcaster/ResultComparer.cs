@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Profiler.Core;
 
 namespace LagGridBroadcaster

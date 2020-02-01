@@ -39,8 +39,8 @@ namespace LagGridBroadcaster
 
         private void SetupConfig()
         {
-            var configFile = Path.Combine(StoragePath, $"{Name}.cfg");
-            _config = Persistent<LagGridBroadcasterConfig>.Load(configFile);
+            var configFilePath = Path.Combine(StoragePath, $"{Name}.cfg");
+            _config = Persistent<LagGridBroadcasterConfig>.Load(configFilePath);
         }
 
         public void Save()

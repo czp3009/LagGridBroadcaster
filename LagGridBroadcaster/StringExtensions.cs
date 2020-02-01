@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LagGridBroadcaster
+﻿namespace LagGridBroadcaster
 {
     internal static class StringExtensions
     {
