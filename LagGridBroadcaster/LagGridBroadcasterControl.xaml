@@ -24,30 +24,29 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row ="1" Grid.Column="0" VerticalAlignment="Center" Text="Broadcast top X grids" Margin="5"/>
-        <TextBox Name="Top" Grid.Row ="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Text="{Binding Top}"/>
+        <TextBlock Grid.Row ="0" Grid.Column="0" VerticalAlignment="Center" Text="Broadcast top X grids" Margin="5"/>
+        <TextBox Grid.Row ="0" Grid.Column="1" Grid.ColumnSpan="2" Name="Top" Text="{Binding Top}" Margin="5"/>
         
-        <TextBlock Grid.Row ="2" Grid.Column="0" VerticalAlignment="Center" Text="Only broadcast grids which take time greater than(us)" Margin="5"/>
-        <TextBox Name="MinUs" Grid.Row ="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Text="{Binding MinUs}"/>
+        <TextBlock Grid.Row ="1" Grid.Column="0" VerticalAlignment="Center" Text="Only broadcast grids which take time greater than(us)" Margin="5"/>
+        <TextBox Grid.Row ="1" Grid.Column="1" Grid.ColumnSpan="2" Name="MinUs" Text="{Binding MinUs}" Margin="5"/>
 
-        <TextBlock Grid.Row ="3" Grid.Column="0" VerticalAlignment="Center" Text="Only broadcast grids when faction member is in radius of(m)(zero for infinity)" Margin="5"/>
-        <TextBox Name="FactionMemberDistance" Grid.Row ="3" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Text="{Binding FactionMemberDistance}"/>
+        <TextBlock Grid.Row ="2" Grid.Column="0" VerticalAlignment="Center" Text="Only broadcast grids when faction member is in radius of(m)(zero for infinity)" Margin="5"/>
+        <TextBox Grid.Row ="2" Grid.Column="1" Grid.ColumnSpan="2" Name="FactionMemberDistance" Text="{Binding FactionMemberDistance}" Margin="5"/>
 
-        <TextBlock Grid.Row ="4" Grid.Column="0" VerticalAlignment="Center" Text="Send faction top X grids to faction members(zero for disable)" Margin="5"/>
-        <TextBox Name="FactionTop" Grid.Row ="4" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Text="{Binding FactionTop}"/>
+        <TextBlock Grid.Row ="3" Grid.Column="0" VerticalAlignment="Center" Text="Send faction top X grids to faction members(zero for disable)" Margin="5"/>
+        <TextBox Grid.Row ="3" Grid.Column="1" Grid.ColumnSpan="2" Name="FactionTop" Text="{Binding FactionTop}" Margin="5"/>
         
-        <TextBlock Grid.Row ="5" Grid.Column="0" VerticalAlignment="Center" Text="Broadcast most lag grid player owned, if all of his grids take more than(us)(zero for disable)" Margin="5"/>
-        <TextBox Name="PlayerMinUs" Grid.Row ="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Text="{Binding PlayerMinUs}"/>
+        <TextBlock Grid.Row ="4" Grid.Column="0" VerticalAlignment="Center" Text="Broadcast most lag grid player owned, if all of his grids take more than(us)(zero for disable)" Margin="5"/>
+        <TextBox Grid.Row ="4" Grid.Column="1" Grid.ColumnSpan="2" Name="PlayerMinUs" Text="{Binding PlayerMinUs}" Margin="5"/>
         
-        <TextBlock Grid.Row ="6" Grid.Column="0" VerticalAlignment="Center" Text="Write measure result to file" Margin="5"/>
-        <CheckBox Name="WriteToFile" Grid.Row ="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" IsChecked="{Binding WriteToFile}"/>
+        <TextBlock Grid.Row ="5" Grid.Column="0" VerticalAlignment="Center" Text="Write measure result to file" Margin="5"/>
+        <CheckBox Grid.Row ="5" Grid.Column="1" Grid.ColumnSpan="2" Name="WriteToFile" IsChecked="{Binding WriteToFile}" Margin="5"/>
         
-        <TextBlock Grid.Row ="7" Grid.Column="0" VerticalAlignment="Center" Text="Result file name" Margin="5"/>
-        <TextBox Name="ResultFileName" Grid.Row ="7" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Text="{Binding ResultFileName}" IsEnabled="{Binding WriteToFile}"/>
+        <TextBlock Grid.Row ="6" Grid.Column="0" VerticalAlignment="Center" Text="Result file name" Margin="5"/>
+        <TextBox Grid.Row ="6" Grid.Column="1" Grid.ColumnSpan="2" Name="ResultFileName" Text="{Binding ResultFileName}" IsEnabled="{Binding WriteToFile}" Margin="5"/>
 
-        <Button Grid.Row="8" Grid.Column="2" Content="Save Config" Margin="5" Click="SaveButton_OnClick"></Button>
+        <Button Grid.Row="7" Grid.Column="2" Content="Save Config" Click="SaveButton_OnClick" Margin="5"/>
     </Grid>
 </UserControl>
