@@ -281,7 +281,7 @@ namespace LagGridBroadcaster
                             factionTopResults
                                 .Where(it => it.MsPerTick < Config.MinMs && it.MsPerTick > Config.MinMs * 0.75)
                                 .ForEach(it => SendNotificationTo(
-                                    $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({FormatTime(Config.PlayerMinMs)})",
+                                    $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({FormatTime(Config.MinMs)})",
                                     steamId
                                 ));
                         }
