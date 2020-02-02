@@ -1,10 +1,12 @@
 ﻿# LagGridBroadcaster
-A Torch plugin that can broadcast most lag grid to all players.
+A [Torch](https://torchapi.net/) plugin that can broadcast most lag grid to all players.
 
 # Dependency
 This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2f-4571-af1c-88c7921bc063), please make sure you have that plugin installed.
 
 # Command
+`laggrids help` Show help message
+
 `laggrids send [ticks]` Send the top X most lag grids to all players
 
 `laggrids list` List latest measure results
@@ -27,6 +29,19 @@ This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2
 `WriteToFile` Write measure result to file
 
 `ResultFileName` Result file name
+
+# Note
+When command `laggrids send` executed, things below will happen:
+
+* Global top x grids will be broadcast(add gps to players), configured by `Top`, `MinUs` and `FactionMemberDistance`
+
+* Faction top x grids will be send to faction members via chat message, configured by `FactionTop`
+
+* If the total time for any player's grids exceeds the configured value, his most lag grid will be broadcast, configured by `PlayerMinUs`
+
+* Write measure result to file, configured by `WriteToFile` and `ResultFileName`
+
+These functions are not related to each other, and configured by different options.
 
 # License
 Apache License 2.0

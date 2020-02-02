@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,6 +25,7 @@ namespace LagGridBroadcaster
 {
     // ReSharper disable once StringLiteralTypo
     [Category("laggrids")]
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
     // ReSharper disable once UnusedType.Global
     public class LagGridBroadcasterCommands : CommandModule
     {
@@ -32,13 +34,27 @@ namespace LagGridBroadcaster
         private LagGridBroadcasterPlugin Plugin => (LagGridBroadcasterPlugin) Context.Plugin;
         private LagGridBroadcasterConfig Config => Plugin.Config;
 
+        [Command("help", "Show help message")]
+        [Permission(MyPromoteLevel.None)]
+        [SuppressMessage("ReSharper", "StringLiteralTypo")]
+        public void Help()
+        {
+            var s = string.Join(Environment.NewLine, "Available commands:",
+                "!laggrids help - Show help message",
+                "!laggrids send [ticks] - Send the top X most lag grids to all players",
+                "!laggrids list - List latest measure results",
+                "!laggrids get - Get latest result of the grid you're currently controlling",
+                "!laggrids cleangps - Cleans GPS markers created by LagGridBroadcaster"
+            );
+            Context.Respond(s);
+        }
+
         /// <summary>
         /// Send the top X most lag grids to all players
         /// </summary>
         /// <param name="ticks">Measure how many ticks</param>
         [Command("send", "Send the top X most lag grids to all players")]
         [Permission(MyPromoteLevel.Admin)]
-        // ReSharper disable once UnusedMember.Global
         public void Send(ulong ticks = 900)
         {
             //validate
@@ -76,7 +92,6 @@ namespace LagGridBroadcaster
 
         [Command("list", "List latest measure results")]
         [Permission(MyPromoteLevel.None)]
-        // ReSharper disable once UnusedMember.Global
         public void List()
         {
             var subtitle = Plugin.LatestMeasureTime != null
@@ -94,7 +109,6 @@ namespace LagGridBroadcaster
 
         [Command("get", "Get latest result of the grid you're currently controlling")]
         [Permission(MyPromoteLevel.None)]
-        // ReSharper disable once UnusedMember.Global
         public void Get()
         {
             var entity = Context.Player?.Controller?.ControlledEntity?.Entity;
