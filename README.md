@@ -15,21 +15,6 @@ This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2
 
 `laggrids cleangps` Cleans GPS markers created by LagGridBroadcaster
 
-# Configuration
-`Top` Broadcast top X grids
-
-`MinUs` Only broadcast grids which take time greater than(us)
-
-`FactionMemberDistance` Only broadcast grids when faction member is in radius of(m)(zero for infinity)
-
-`FactionTop` Send faction top X grids to faction members(zero for disable)
-
-`PlayerMinUs` Broadcast most lag grid player owned, if all of his grids take more than(us)(zero for disable)
-
-`WriteToFile` Write measure result to file
-
-`ResultFileName` Result file name
-
 # Note
 When command `laggrids send` executed, things below will happen:
 
@@ -38,6 +23,8 @@ When command `laggrids send` executed, things below will happen:
 * Faction top x grids will be send to faction members via chat message, configured by `FactionTop`
 
 * If the total time for any player's grids exceeds the configured value, his most lag grid will be broadcast, configured by `PlayerMinUs`
+
+* Send the result of the grid currently in control to player, configured by `SendResultOfControllingGrid`
 
 * Write measure result to file, configured by `WriteToFile` and `ResultFileName`
 

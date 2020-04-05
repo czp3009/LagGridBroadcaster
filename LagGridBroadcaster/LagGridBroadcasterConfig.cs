@@ -9,6 +9,8 @@ namespace LagGridBroadcaster
         private ulong _factionMemberDistance = 1000;
         private uint _factionTop = 3;
         private uint _playerMinUs;
+        private bool _sendResultOfControllingGrid = true;
+        private bool _noOutputWhileEmptyResult = true;
         private bool _writeToFile = true;
         public const string ResultFileDefaultName = "LagGridBroadcasterMeasureResult.xml";
         private string _resultFileName = ResultFileDefaultName;
@@ -47,6 +49,18 @@ namespace LagGridBroadcaster
 
         public double PlayerMinMs => _playerMinUs / 1000D;
 
+        public bool SendResultOfControllingGrid
+        {
+            get => _sendResultOfControllingGrid;
+            set => SetValue(ref _sendResultOfControllingGrid, value);
+        }
+
+        public bool NoOutputWhileEmptyResult
+        {
+            get => _noOutputWhileEmptyResult;
+            set => SetValue(ref _noOutputWhileEmptyResult, value);
+        }
+
         public bool WriteToFile
         {
             get => _writeToFile;
@@ -56,7 +70,7 @@ namespace LagGridBroadcaster
         public string ResultFileName
         {
             get => _resultFileName;
-            set => SetValue(ref _resultFileName,value);
+            set => SetValue(ref _resultFileName, value);
         }
     }
 }

@@ -67,12 +67,12 @@ namespace LagGridBroadcaster
             //change mask
             if (!ProfilerDataProxy.ChangeMask(null, null, null, null))
             {
-                Context.Respond("Failed to change profiling mask.  There can only be one.");
+                Context.Respond("Failed to change profiling mask. There can only be one.");
                 return;
             }
 
             //send request
-            CleanGps();
+            CleanGps(); //clean old gps first
             var profilerRequest = new ProfilerRequest(ProfilerRequestType.Grid, ticks);
             profilerRequest.OnFinished += (_, results) =>
             {
@@ -125,7 +125,7 @@ namespace LagGridBroadcaster
             }
 
             var result = Plugin.LatestResults.FirstOrDefault(it => it.Item1 == grid.EntityId).Item2;
-            if (result.Equals(default(ProfilerRequest.Result)))
+            if (result.Equals(default))
             {
                 Context.Respond("No result for this grid");
                 return;
@@ -231,12 +231,16 @@ namespace LagGridBroadcaster
                     })
                     .Take((int) Config.Top)
                     .ToArray();
-                // ReSharper disable once UseStringInterpolation
-                SendMessage(string.Format("Global top {0} grids{1}:",
-                    globalTop.Length == Config.Top ? Config.Top.ToString() : $"{globalTop.Length}/{Config.Top}",
-                    Config.MinUs == 0 ? "" : $"(over {Config.MinUs}us)"
-                ));
-                globalTop.ForEach(it => SendMessage(FormatResult(it.result)));
+                if (!Config.NoOutputWhileEmptyResult || globalTop.Length != 0)
+                {
+                    // ReSharper disable once UseStringInterpolation
+                    SendMessage(string.Format("Global top {0} grids{1}:",
+                        globalTop.Length == Config.Top ? Config.Top.ToString() : $"{globalTop.Length}/{Config.Top}",
+                        Config.MinUs == 0 ? "" : $"(over {Config.MinUs}us)"
+                    ));
+                    globalTop.ForEach(it => SendMessage(FormatResult(it.result)));
+                }
+
                 prepareToBroadcast.AddRange(globalTop.Select(it => it.result));
             }
 
@@ -254,7 +258,8 @@ namespace LagGridBroadcaster
                         else
                             noFactionResults.AddOrUpdateList(gridOwner, result);
                     });
-                MySession.Static.Players.GetOnlinePlayers().Where(it => it.IsRealPlayer)
+                MySession.Static.Players.GetOnlinePlayers()
+                    .Where(it => it.IsRealPlayer)
                     .ForEach(player =>
                     {
                         var playerId = player.Identity.IdentityId;
@@ -266,6 +271,7 @@ namespace LagGridBroadcaster
                                   Enumerable.Empty<ProfilerRequest.Result>().ToList()
                                 : noFactionResults.GetValueOrDefault(playerId) ??
                                   Enumerable.Empty<ProfilerRequest.Result>().ToList();
+                        if (Config.NoOutputWhileEmptyResult && factionTopResults.Count == 0) return;
                         var steamId = player.Id.SteamId;
                         // ReSharper disable once UseStringInterpolation
                         SendMessage(string.Format("Faction top {0} grids:",
@@ -322,10 +328,35 @@ namespace LagGridBroadcaster
                 prepareToBroadcast.AddRange(needBroadcast.Select(it => it.Item2));
             }
 
+            //do actual broadcast
             var distinctPrepareToBroadcast = prepareToBroadcast.Distinct(new ResultComparer()).ToArray();
             if (distinctPrepareToBroadcast.Length != 0)
+            {
                 SendNotification($"Total {distinctPrepareToBroadcast.Length} grids being broadcast");
+            }
+
             distinctPrepareToBroadcast.ForEach(Broadcast);
+
+            //send result of controlling grid to player
+            if (Config.SendResultOfControllingGrid)
+            {
+                MySession.Static.Players.GetOnlinePlayers()
+                    .Where(it => it.IsRealPlayer)
+                    .ForEach(player =>
+                    {
+                        var entity = player?.Controller?.ControlledEntity?.Entity;
+                        if (entity == null) return;
+                        if (!TryGetControllingGrid(entity, out var grid)) return;
+                        var tuple = tuples.FirstOrDefault(it => it.entityId == grid.EntityId);
+                        if (!tuple.Equals(default))
+                        {
+                            SendMessage(
+                                $"Your current controlling grid '{grid.Name}' took {FormatTime(tuple.result.MsPerTick)}",
+                                player.Id.SteamId
+                            );
+                        }
+                    });
+            }
         }
 
         private void Broadcast(ProfilerRequest.Result result)
