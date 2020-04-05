@@ -4,7 +4,7 @@
     <Name>LagGridBroadcaster</Name>
     <Guid>dd316db4-5d89-4db2-aa47-dac2a1a0ea64</Guid>
     <Repository>https://github.com/czp3009/LagGridBroadcaster</Repository>
-    <Version>v1.0.1.0</Version>
+    <Version>v1.0.1.1</Version>
     <Dependencies>
         <PluginDependency>
             <Plugin>da82de0f-9d2f-4571-af1c-88c7921bc063</Plugin>

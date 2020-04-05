@@ -348,13 +348,12 @@ namespace LagGridBroadcaster
                         if (entity == null) return;
                         if (!TryGetControllingGrid(entity, out var grid)) return;
                         var tuple = tuples.FirstOrDefault(it => it.entityId == grid.EntityId);
-                        if (!tuple.Equals(default))
-                        {
-                            SendMessage(
-                                $"Your current controlling grid '{grid.Name}' took {FormatTime(tuple.result.MsPerTick)}",
-                                player.Id.SteamId
-                            );
-                        }
+                        if (tuple.Equals(default)) return;
+                        var result = tuple.result;
+                        SendMessage(
+                            $"Your current controlling grid '{result.Name}' took {FormatTime(result.MsPerTick)}",
+                            player.Id.SteamId
+                        );
                     });
             }
         }
