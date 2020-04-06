@@ -1,9 +1,8 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
 
 namespace LagGridBroadcaster
 {
-    public partial class LagGridBroadcasterControl 
+    public partial class LagGridBroadcasterControl
     {
         private readonly LagGridBroadcasterPlugin _plugin;
 
