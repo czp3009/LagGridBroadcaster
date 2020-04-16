@@ -387,7 +387,7 @@ namespace LagGridBroadcaster
         private void SendMessage(string message, ulong targetSteamId = 0)
         {
             Context.Torch.CurrentSession.Managers.GetManager<IChatManagerServer>()
-                ?.SendMessageAsOther(null, message, null, targetSteamId);
+                ?.SendMessageAsOther("LagGridBroadcaster", message, Color.Red, targetSteamId);
         }
 
         private static void SendNotification(string message, int disappearTimeMs = 10000)
