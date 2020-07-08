@@ -135,7 +135,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Profiler">
+    <Reference Include="Profiler.Core">
       <HintPath>$(SolutionDir)\Profiler\Profiler.dll</HintPath>
       <Private>False</Private>
     </Reference>

@@ -57,6 +57,8 @@ namespace LagGridBroadcaster
         [Permission(MyPromoteLevel.Admin)]
         public void Send(ulong ticks = 900)
         {
+            if (!checkInit()) return;
+
             //validate
             if (ticks == 0)
             {
@@ -64,17 +66,8 @@ namespace LagGridBroadcaster
                 return;
             }
 
-            //change mask
-            if (!ProfilerDataProxy.ChangeMask(null, null, null, null))
-            {
-                Context.Respond("Failed to change profiling mask. There can only be one.");
-                return;
-            }
-
-            //send request
-            CleanGps(); //clean old gps first
             var profilerRequest = new ProfilerRequest(ProfilerRequestType.Grid, ticks);
-            profilerRequest.OnFinished += (_, results) =>
+            profilerRequest.OnFinished += (results) =>
             {
                 try
                 {
@@ -86,8 +79,16 @@ namespace LagGridBroadcaster
                     Log.Error(e);
                 }
             };
-            Context.Respond($"Measure {ticks} ticks");
-            ProfilerDataProxy.Submit(profilerRequest);
+
+            if (ProfilerDataProxy.Submit(profilerRequest))
+            {
+                CleanGps(); //clean old gps first
+                Context.Respond($"Measure {ticks} ticks");
+            }
+            else
+            {
+                Context.Respond("Profiler is already active");
+            }
         }
 
         [Command("list", "List latest measure results")]
@@ -156,7 +157,7 @@ namespace LagGridBroadcaster
 
         private void OnProfilerRequestFinished(IEnumerable<ProfilerRequest.Result> results)
         {
-            var tuples = results.Where(it => it.MsPerTick > 0)
+            var tuples = results.Where(it => it.MainThreadMsPerTick > 0)
                 .Where(it => it.Description != null) //i don't know why description can be null
                 .Where(it => it.Position != null) //position may be null but i can't understand
                 .Select(result =>
@@ -184,7 +185,7 @@ namespace LagGridBroadcaster
                     var (result, entityId, _, gridOwner, identity, _, faction) = it;
                     return new MeasureResult
                     {
-                        EntityId = entityId, EntityName = result.Name, MsPerTick = result.MsPerTick,
+                        EntityId = entityId, EntityName = result.Name, MsPerTick = result.MainThreadMsPerTick,
                         PlayerId = gridOwner, PlayerDisplayName = identity?.DisplayName,
                         FactionId = faction?.FactionId, FactionName = faction?.Name
                     };
@@ -210,7 +211,7 @@ namespace LagGridBroadcaster
             //send globalTop to all players
             if (Config.Top != 0)
             {
-                var globalTop = tuples.Where(it => it.result.MsPerTick > Config.MinMs)
+                var globalTop = tuples.Where(it => it.result.MainThreadMsPerTick > Config.MinMs)
                     .Where(tuple =>
                     {
                         var distance = Config.FactionMemberDistance;
@@ -285,9 +286,11 @@ namespace LagGridBroadcaster
                         if (Config.MinUs != 0)
                         {
                             factionTopResults
-                                .Where(it => it.MsPerTick < Config.MinMs && it.MsPerTick > Config.MinMs * 0.75)
+                                .Where(it =>
+                                    it.MainThreadMsPerTick < Config.MinMs &&
+                                    it.MainThreadMsPerTick > Config.MinMs * 0.75)
                                 .ForEach(it => SendNotificationTo(
-                                    $"Grid '{it.Name}'({FormatTime(it.MsPerTick)}) in your faction very close to server limit({FormatTime(Config.MinMs)})",
+                                    $"Grid '{it.Name}'({FormatTime(it.MainThreadMsPerTick)}) in your faction very close to server limit({FormatTime(Config.MinMs)})",
                                     steamId
                                 ));
                         }
@@ -304,7 +307,7 @@ namespace LagGridBroadcaster
                     .ForEach(player =>
                     {
                         var playerResults = playerResultsLoopUp[player.Identity.IdentityId].ToArray();
-                        var totalMs = playerResults.Sum(it => it.MsPerTick);
+                        var totalMs = playerResults.Sum(it => it.MainThreadMsPerTick);
                         var steamId = player.Id.SteamId;
                         SendMessage(
                             $"Your grids total took {FormatTime(totalMs)}(server limit {FormatTime(Config.PlayerMinMs)})",
@@ -351,7 +354,7 @@ namespace LagGridBroadcaster
                         if (tuple.Equals(default)) return;
                         var result = tuple.result;
                         SendMessage(
-                            $"Your current controlling grid '{result.Name}' took {FormatTime(result.MsPerTick)}",
+                            $"Your current controlling grid '{result.Name}' took {FormatTime(result.MainThreadMsPerTick)}",
                             player.Id.SteamId
                         );
                     });
@@ -370,7 +373,7 @@ namespace LagGridBroadcaster
                 coords = result.Position.Value,
                 showOnHud = true,
                 color = Color.Purple,
-                description = $"{result.Description} ({result.HitsPerTick:F1}{result.HitsUnit})",
+                description = $"{result.Description} ({FormatTime(result.MainThreadMsPerTick)})",
                 entityId = 0,
                 isFinal = false
             });
@@ -388,6 +391,17 @@ namespace LagGridBroadcaster
         {
             Context.Torch.CurrentSession.Managers.GetManager<IChatManagerServer>()
                 ?.SendMessageAsOther("LagGridBroadcaster", message, Color.Red, targetSteamId);
+        }
+
+        private bool checkInit()
+        {
+            if (ProfilerDataProxy.initialized)
+            {
+                return true;
+            }
+
+            Context.Respond("Profiler not init correctly");
+            return false;
         }
 
         private static void SendNotification(string message, int disappearTimeMs = 10000)
@@ -420,7 +434,7 @@ namespace LagGridBroadcaster
 
         private static string FormatResult(ProfilerRequest.Result result)
         {
-            return $"{result.Name} ({FormatTime(result.MsPerTick)})";
+            return $"{result.Name} ({FormatTime(result.MainThreadMsPerTick)})";
         }
 
         private static bool TryGetControllingGrid(IMyEntity entity, out MyCubeGrid grid)
