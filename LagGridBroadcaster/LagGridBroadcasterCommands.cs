@@ -86,6 +86,7 @@ namespace LagGridBroadcaster
 
                         var result = profiler.GetResult();
                         var endTick = MySandboxGame.Static.SimulationFrameCounter;
+                        Context.Respond("Profiling finish");
                         CleanGps();
                         OnProfilerRequestFinished(result, endTick - startTick);
                     }
@@ -97,7 +98,6 @@ namespace LagGridBroadcaster
                 }
             }).Start();
         }
-
 
         [Command("list", "List latest measure results")]
         [Permission(MyPromoteLevel.None)]
@@ -191,6 +191,7 @@ namespace LagGridBroadcaster
                     Path.Combine(Plugin.StoragePath, resultFileName),
                     new MeasureResultsAndTime(measureResults, now)
                 ).Save();
+                Log.Info("Measure results saved to file");
             }
 
             //global top x grids
