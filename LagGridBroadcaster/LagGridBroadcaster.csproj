@@ -135,7 +135,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Profiler.Core">
+    <Reference Include="Profiler">
       <HintPath>$(SolutionDir)\Profiler\Profiler.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -146,8 +146,6 @@
     <Compile Include="LagGridBroadcasterCommands.cs" />
     <Compile Include="LagGridBroadcasterConfig.cs" />
     <Compile Include="MeasureResult.cs" />
-    <Compile Include="ResultComparer.cs" />
-    <Compile Include="StringExtensions.cs" />
     <Page Include="LagGridBroadcasterControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -157,7 +155,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="LagGridBroadcasterPlugin.cs" />
-    <Compile Include="ProfilerDataProxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

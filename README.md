@@ -22,13 +22,9 @@ When command `laggrids send` executed, things below will happen:
 
 * Faction top x grids will be send to faction members via chat message, configured by `FactionTop`
 
-* If the total time for any player's grids exceeds the configured value, his most lag grid will be broadcast, configured by `PlayerMinUs`
-
 * Send the result of the grid currently in control to player, configured by `SendResultOfControllingGrid`
 
 * Write measure result to file, configured by `WriteToFile` and `ResultFileName`
-
-These functions are not related to each other, and configured by different options.
 
 # License
 Apache License 2.0

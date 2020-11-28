@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Controls;
 using NLog;
-using Profiler.Core;
 using Torch;
 using Torch.API;
 using Torch.API.Plugins;
@@ -17,19 +16,19 @@ namespace LagGridBroadcaster
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
+        public readonly ConcurrentDictionary<long, List<IMyGps>> AddedGps =
+            new ConcurrentDictionary<long, List<IMyGps>>();
+
         private Persistent<LagGridBroadcasterConfig> _config;
-        public LagGridBroadcasterConfig Config => _config.Data;
 
         private LagGridBroadcasterControl _control;
-        public UserControl GetControl() => _control ?? (_control = new LagGridBroadcasterControl(this));
-
-        //entityId to result
-        public (long,ProfilerRequest.Result)[] LatestResults = Array.Empty<(long,ProfilerRequest.Result)>();
 
         public DateTime? LatestMeasureTime = null;
 
-        public readonly ConcurrentDictionary<long, ICollection<IMyGps>> AddedGps =
-            new ConcurrentDictionary<long, ICollection<IMyGps>>();
+        //entityId to result
+        public Dictionary<long, MeasureResult> LatestResults = null;
+        public LagGridBroadcasterConfig Config => _config.Data;
+        public UserControl GetControl() => _control ?? (_control = new LagGridBroadcasterControl(this));
 
         public override void Init(ITorchBase torch)
         {

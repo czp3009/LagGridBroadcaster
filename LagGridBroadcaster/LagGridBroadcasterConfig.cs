@@ -4,16 +4,15 @@ namespace LagGridBroadcaster
 {
     public class LagGridBroadcasterConfig : ViewModel
     {
-        private uint _top = 3;
-        private uint _minUs = 500;
-        private ulong _factionMemberDistance = 1000;
-        private uint _factionTop = 3;
-        private uint _playerMinUs;
-        private bool _sendResultOfControllingGrid = true;
-        private bool _noOutputWhileEmptyResult = true;
-        private bool _writeToFile = true;
         public const string ResultFileDefaultName = "LagGridBroadcasterMeasureResult.xml";
+        private ulong _factionMemberDistance = 1000;
+        private uint _factionTop = 1;
+        private uint _minUs = 500;
+        private bool _noOutputWhileEmptyResult = true;
         private string _resultFileName = ResultFileDefaultName;
+        private bool _sendResultOfControllingGrid = true;
+        private uint _top = 1;
+        private bool _writeToFile = true;
 
         public uint Top
         {
@@ -40,14 +39,6 @@ namespace LagGridBroadcaster
             get => _factionTop;
             set => SetValue(ref _factionTop, value);
         }
-
-        public uint PlayerMinUs
-        {
-            get => _playerMinUs;
-            set => SetValue(ref _playerMinUs, value);
-        }
-
-        public double PlayerMinMs => _playerMinUs / 1000D;
 
         public bool SendResultOfControllingGrid
         {

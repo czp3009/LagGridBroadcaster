@@ -40,21 +40,18 @@
         <TextBlock Grid.Row ="3" Grid.Column="0" VerticalAlignment="Center" Text="Send faction top X grids to faction members(zero for disable)" Margin="5"/>
         <TextBox Grid.Row ="3" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding FactionTop}" Margin="5"/>
         
-        <TextBlock Grid.Row ="4" Grid.Column="0" VerticalAlignment="Center" Text="Broadcast most lag grid player owned, if all of his grids take more than(us)(zero for disable)" Margin="5"/>
-        <TextBox Grid.Row ="4" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding PlayerMinUs}" Margin="5"/>
+        <TextBlock Grid.Row ="4" Grid.Column="0" VerticalAlignment="Center" Text="Send the result of the grid currently in control to player" Margin="5"/>
+        <CheckBox Grid.Row ="4" Grid.Column="1" Grid.ColumnSpan="2" IsChecked="{Binding SendResultOfControllingGrid}" Margin="5"/>
         
-        <TextBlock Grid.Row ="5" Grid.Column="0" VerticalAlignment="Center" Text="Send the result of the grid currently in control to player" Margin="5"/>
-        <CheckBox Grid.Row ="5" Grid.Column="1" Grid.ColumnSpan="2" IsChecked="{Binding SendResultOfControllingGrid}" Margin="5"/>
+        <TextBlock Grid.Row ="5" Grid.Column="0" VerticalAlignment="Center" Text="No output while result is empty" Margin="5"/>
+        <CheckBox Grid.Row ="5" Grid.Column="1" Grid.ColumnSpan="2" IsChecked="{Binding NoOutputWhileEmptyResult}" Margin="5"/>
         
-        <TextBlock Grid.Row ="6" Grid.Column="0" VerticalAlignment="Center" Text="No output while result is empty" Margin="5"/>
-        <CheckBox Grid.Row ="6" Grid.Column="1" Grid.ColumnSpan="2" IsChecked="{Binding NoOutputWhileEmptyResult}" Margin="5"/>
+        <TextBlock Grid.Row ="6" Grid.Column="0" VerticalAlignment="Center" Text="Write measure result to file" Margin="5"/>
+        <CheckBox Grid.Row ="6" Grid.Column="1" Grid.ColumnSpan="2" IsChecked="{Binding WriteToFile}" Margin="5"/>
         
-        <TextBlock Grid.Row ="7" Grid.Column="0" VerticalAlignment="Center" Text="Write measure result to file" Margin="5"/>
-        <CheckBox Grid.Row ="7" Grid.Column="1" Grid.ColumnSpan="2" IsChecked="{Binding WriteToFile}" Margin="5"/>
-        
-        <TextBlock Grid.Row ="8" Grid.Column="0" VerticalAlignment="Center" Text="Result file name" Margin="5"/>
-        <TextBox Grid.Row ="8" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding ResultFileName}" IsEnabled="{Binding WriteToFile}" Margin="5"/>
+        <TextBlock Grid.Row ="7" Grid.Column="0" VerticalAlignment="Center" Text="Result file name" Margin="5"/>
+        <TextBox Grid.Row ="7" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding ResultFileName}" IsEnabled="{Binding WriteToFile}" Margin="5"/>
 
-        <Button Grid.Row="9" Grid.Column="2" Content="Save Config" Click="SaveButton_OnClick" Margin="5"/>
+        <Button Grid.Row="8" Grid.Column="2" Content="Save Config" Click="SaveButton_OnClick" Margin="5"/>
     </Grid>
 </UserControl>

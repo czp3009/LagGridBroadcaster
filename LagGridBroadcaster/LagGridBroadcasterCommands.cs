@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog;
+using Profiler.Basics;
 using Profiler.Core;
+using Sandbox;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
@@ -57,8 +61,6 @@ namespace LagGridBroadcaster
         [Permission(MyPromoteLevel.Admin)]
         public void Send(ulong ticks = 900)
         {
-            if (!checkInit()) return;
-
             //validate
             if (ticks == 0)
             {
@@ -66,39 +68,46 @@ namespace LagGridBroadcaster
                 return;
             }
 
-            var profilerRequest = new ProfilerRequest(ProfilerRequestType.Grid, ticks);
-            profilerRequest.OnFinished += (results) =>
+            var seconds = ticks / 60.0;
+
+            new Thread(async () =>
             {
                 try
                 {
-                    OnProfilerRequestFinished(results);
+                    var mask = new GameEntityMask(null, null, null);
+                    using (var profiler = new GridProfiler(mask))
+                    using (ProfilerResultQueue.Profile(profiler))
+                    {
+                        Context.Respond($"Started profiling grids, result in {ticks}ticks");
+
+                        var startTick = MySandboxGame.Static.SimulationFrameCounter;
+                        profiler.MarkStart();
+                        await Task.Delay(TimeSpan.FromSeconds(seconds));
+
+                        var result = profiler.GetResult();
+                        var endTick = MySandboxGame.Static.SimulationFrameCounter;
+                        CleanGps();
+                        OnProfilerRequestFinished(result, endTick - startTick);
+                    }
                 }
                 catch (Exception e)
                 {
-                    Context.Respond($"Error occured: {e.Message}");
                     Log.Error(e);
+                    Context.Respond($"Error occured: {e.Message}");
                 }
-            };
-
-            if (ProfilerDataProxy.Submit(profilerRequest))
-            {
-                CleanGps(); //clean old gps first
-                Context.Respond($"Measure {ticks} ticks");
-            }
-            else
-            {
-                Context.Respond("Profiler is already active");
-            }
+            }).Start();
         }
+
 
         [Command("list", "List latest measure results")]
         [Permission(MyPromoteLevel.None)]
         public void List()
         {
-            var subtitle = Plugin.LatestMeasureTime != null
-                ? $"{Plugin.LatestMeasureTime.ToString()} UTC"
-                : "no results";
-            var content = string.Join(Environment.NewLine, Plugin.LatestResults.Select(it => FormatResult(it.Item2)));
+            var hasResult = Plugin.LatestMeasureTime != null;
+            var subtitle = hasResult ? $"{Plugin.LatestMeasureTime.ToString()} UTC" : "no results";
+            var content = hasResult
+                ? string.Join(Environment.NewLine, Plugin.LatestResults.Select(it => FormatResult(it.Value)))
+                : string.Empty;
             if (Context.Player == null)
             {
                 Context.Respond($"{subtitle}{Environment.NewLine}{content}");
@@ -125,8 +134,8 @@ namespace LagGridBroadcaster
                 return;
             }
 
-            var result = Plugin.LatestResults.FirstOrDefault(it => it.Item1 == grid.EntityId).Item2;
-            if (result.Equals(default))
+            var result = Plugin.LatestResults?.GetValueOrDefault(grid.EntityId);
+            if (result == null)
             {
                 Context.Respond("No result for this grid");
                 return;
@@ -145,200 +154,135 @@ namespace LagGridBroadcaster
             Plugin.AddedGps.ForEach(pair =>
             {
                 var (identityId, gpsList) = pair;
-                lock (gpsList)
-                {
-                    MyAPIGateway.Session.GPS.GetGpsList(identityId).Intersect(gpsList, new GpsComparer())
-                        .Where(it => it.DiscardAt != null)
-                        .ForEach(it => MyAPIGateway.Session.GPS.RemoveGps(identityId, it));
-                    gpsList.Clear();
-                }
+                MyAPIGateway.Session.GPS.GetGpsList(identityId).Intersect(gpsList, new GpsComparer())
+                    .Where(it => it.DiscardAt != null)
+                    .ForEach(it => MyAPIGateway.Session.GPS.RemoveGps(identityId, it));
+                Plugin.AddedGps.Remove(identityId);
             });
         }
 
-        private void OnProfilerRequestFinished(IEnumerable<ProfilerRequest.Result> results)
+        private void OnProfilerRequestFinished(BaseProfilerResult<MyCubeGrid> result, ulong ticks)
         {
-            var tuples = results.Where(it => it.MainThreadMsPerTick > 0)
-                .Where(it => it.Description != null) //i don't know why description can be null
-                .Where(it => it.Position != null) //position may be null but i can't understand
-                .Select(result =>
-                {
-                    var entityId = Convert.ToInt64(result.Description.SubstringAfter('='));
-                    var grid = MyEntities.GetEntityById(entityId) as MyCubeGrid; //maybe null if entityId is 0
-                    var gridOwner = grid?.BigOwners.FirstOrDefault(it => it != 0) ?? 0; //maybe 0
-                    var identity = MySession.Static.Players.TryGetIdentity(gridOwner); //maybe null if gridOwner is 0
-                    TryGetPlayerById(gridOwner, out var player); //may be null if gridOwner is 0
-                    //maybe null if gridOwner is 0 or player not join faction
-                    var faction = MySession.Static.Factions.GetPlayerFaction(gridOwner);
-                    return (result, entityId, grid, gridOwner, identity, player, faction);
-                })
-                .Where(it => it.entityId != 0)
-                .ToArray();
+            //TODO GetTopEntities() cause System.MissingMethodException, why?
+            var entitiesFieldInfo = typeof(BaseProfilerResult<MyCubeGrid>)
+                .GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
+            // ReSharper disable once PossibleNullReferenceException
+            var measureResults = ((IReadOnlyDictionary<MyCubeGrid, ProfilerEntry>) entitiesFieldInfo.GetValue(
+                    result.MapKeys(myCubeGrid =>
+                        MyCubeGridGroups.Static.Logical.GetGroupNodes(myCubeGrid).MaxBy(it => it.BlocksPCU)
+                    )
+                ))
+                .Where(it => it.Value.MainThreadTime != 0)
+                .Select(it => new MeasureResult(it.Key, it.Value, ticks))
+                .Where(it => it.PlayerIdentityId != 0)
+                .OrderByDescending(it => it.MainThreadTimePerTick)
+                .ToList();
+            var entityIdToResult = measureResults.ToDictionary(it => it.EntityId, it => it);
+            Plugin.LatestResults = entityIdToResult;
             var now = DateTime.UtcNow;
-            Plugin.LatestResults = tuples.Select(it => (it.entityId, it.result)).ToArray();
             Plugin.LatestMeasureTime = now;
 
             //write to file
             if (Config.WriteToFile)
             {
-                var measureResults = tuples.Select(it =>
-                {
-                    var (result, entityId, _, gridOwner, identity, _, faction) = it;
-                    return new MeasureResult
-                    {
-                        EntityId = entityId, EntityName = result.Name, MsPerTick = result.MainThreadMsPerTick,
-                        PlayerId = gridOwner, PlayerDisplayName = identity?.DisplayName,
-                        FactionId = faction?.FactionId, FactionName = faction?.Name
-                    };
-                }).ToArray();
-                var measureResultsAndTime = new MeasureResultsAndTime
-                {
-                    MeasureResults = measureResults, DateTime = now
-                };
-                var persistent = new Persistent<MeasureResultsAndTime>(
-                    Path.Combine(
-                        Plugin.StoragePath,
-                        Config.ResultFileName.Length != 0
-                            ? Config.ResultFileName
-                            : LagGridBroadcasterConfig.ResultFileDefaultName
-                    ),
-                    measureResultsAndTime
-                );
-                //simply run in thread pool
-                Task.Run(() => persistent.Save());
+                var resultFileName = Config.ResultFileName;
+                if (resultFileName.Length == 0) resultFileName = LagGridBroadcasterConfig.ResultFileDefaultName;
+                new Persistent<MeasureResultsAndTime>(
+                    Path.Combine(Plugin.StoragePath, resultFileName),
+                    new MeasureResultsAndTime(measureResults, now)
+                ).Save();
             }
 
-            var prepareToBroadcast = new List<ProfilerRequest.Result>();
-            //send globalTop to all players
-            if (Config.Top != 0)
+            //global top x grids
+            var noOutputWhileEmptyResult = Config.NoOutputWhileEmptyResult;
+            var top = (int) Config.Top;
+            if (top != 0)
             {
-                var globalTop = tuples.Where(it => it.result.MainThreadMsPerTick > Config.MinMs)
-                    .Where(tuple =>
+                var minMs = Config.MinMs;
+                var minUs = Config.MinUs;
+                var factionMemberDistance = Config.FactionMemberDistance;
+                var globalTopResults = measureResults.Where(it => it.MainThreadTimePerTick >= minMs)
+                    .Where(measureResult =>
                     {
-                        var distance = Config.FactionMemberDistance;
-                        var (result, _, _, gridOwner, _, player, faction) = tuple;
-                        if (distance == 0 || gridOwner == 0) return true;
-                        //player not join faction
-                        if (faction == null)
-                            // ReSharper disable once PossibleInvalidOperationException
-                            return player != null &&
-                                   Vector3.Distance(result.Position.Value, player.GetPosition()) < distance;
-                        //npc faction
-                        if (faction.FactionType != MyFactionTypes.PlayerMade) return true;
-                        return faction.Members.Keys.Any(it =>
-                            TryGetPlayerById(it, out var outPlayer) &&
-                            // ReSharper disable once PossibleInvalidOperationException
-                            Vector3.Distance(result.Position.Value, outPlayer.GetPosition()) < distance
+                        //any faction member close to this grid
+                        var factionMembers = measureResult.FactionId == null
+                            ? new List<MyPlayer> {GetPlayerById(measureResult.PlayerIdentityId)}
+                            : MySession.Static.Factions[measureResult.FactionId.Value].Members.Keys
+                                .Select(GetPlayerById);
+                        return factionMembers.Any(it =>
+                            Vector3.Distance(measureResult.EntityCoords, it.GetPosition()) <= factionMemberDistance
                         );
                     })
-                    .Take((int) Config.Top)
-                    .ToArray();
-                if (!Config.NoOutputWhileEmptyResult || globalTop.Length != 0)
+                    .Take(top)
+                    .ToList();
+                if (globalTopResults.Count != 0 || !noOutputWhileEmptyResult)
                 {
                     // ReSharper disable once UseStringInterpolation
                     SendMessage(string.Format("Global top {0} grids{1}:",
-                        globalTop.Length == Config.Top ? Config.Top.ToString() : $"{globalTop.Length}/{Config.Top}",
-                        Config.MinUs == 0 ? "" : $"(over {Config.MinUs}us)"
+                        globalTopResults.Count == top ? top.ToString() : $"{globalTopResults.Count}/{Config.Top}",
+                        minUs == 0 ? "" : $"(over {minUs}us)"
                     ));
-                    globalTop.ForEach(it => SendMessage(FormatResult(it.result)));
+                    globalTopResults.ForEach(it =>
+                    {
+                        //send chat message to all player
+                        SendMessage(FormatResult(it));
+                        //send gps to all players
+                        Broadcast(it);
+                    });
                 }
-
-                prepareToBroadcast.AddRange(globalTop.Select(it => it.result));
             }
 
             //send factionTop to faction members
-            if (Config.FactionTop != 0)
+            var factionTop = (int) Config.FactionTop;
+            if (factionTop != 0)
             {
-                var factionResults = new Dictionary<long, List<ProfilerRequest.Result>>(); //factionId to results
-                var noFactionResults = new Dictionary<long, List<ProfilerRequest.Result>>(); //playerId to results
-                tuples.Where(it => it.gridOwner != 0) //except Nobody' grid
-                    .ForEach(tuple =>
+                var playerIdentityIdToResult = new Dictionary<long, List<MeasureResult>>();
+                var factionIdToResult = new Dictionary<long, List<MeasureResult>>();
+                measureResults.ForEach(it =>
+                {
+                    if (it.FactionId == null)
                     {
-                        var (result, _, _, gridOwner, _, _, faction) = tuple;
-                        if (faction != null)
-                            factionResults.AddOrUpdateList(faction.FactionId, result);
-                        else
-                            noFactionResults.AddOrUpdateList(gridOwner, result);
-                    });
+                        playerIdentityIdToResult.AddOrUpdateList(it.PlayerIdentityId, it);
+                    }
+                    else
+                    {
+                        factionIdToResult.AddOrUpdateList(it.FactionId.Value, it);
+                    }
+                });
+
                 MySession.Static.Players.GetOnlinePlayers()
                     .Where(it => it.IsRealPlayer)
                     .ForEach(player =>
                     {
-                        var playerId = player.Identity.IdentityId;
-                        var faction = MySession.Static.Factions.GetPlayerFaction(playerId);
-                        //player may don't have any grid
-                        var factionTopResults =
-                            faction != null
-                                ? factionResults.GetValueOrDefault(faction.FactionId) ??
-                                  Enumerable.Empty<ProfilerRequest.Result>().ToList()
-                                : noFactionResults.GetValueOrDefault(playerId) ??
-                                  Enumerable.Empty<ProfilerRequest.Result>().ToList();
-                        if (Config.NoOutputWhileEmptyResult && factionTopResults.Count == 0) return;
-                        var steamId = player.Id.SteamId;
+                        var playerIdentityId = player.Identity.IdentityId;
+                        var faction = MySession.Static.Factions.GetPlayerFaction(playerIdentityId);
+                        IEnumerable<MeasureResult> factionTopResultsEnumerable;
+                        if (faction == null) //player not join faction
+                        {
+                            factionTopResultsEnumerable = playerIdentityIdToResult.GetValueOrDefault(playerIdentityId)
+                                ?.Take(factionTop);
+                        }
+                        else
+                        {
+                            factionTopResultsEnumerable = factionIdToResult.GetValueOrDefault(faction.FactionId)
+                                ?.Take(factionTop);
+                        }
+
+                        var factionTopResults = factionTopResultsEnumerable?.ToList() ?? new List<MeasureResult>();
+                        if (factionTopResults.Count == 0 && noOutputWhileEmptyResult) return;
+
+                        var playerSteamId = player.Id.SteamId;
                         // ReSharper disable once UseStringInterpolation
                         SendMessage(string.Format("Faction top {0} grids:",
-                            factionTopResults.Count < Config.FactionTop
-                                ? $"{factionTopResults.Count}/{Config.FactionTop}"
-                                : Config.FactionTop.ToString()
-                        ), steamId);
-                        factionTopResults.Take((int) Config.FactionTop).ForEach(it =>
-                            SendMessage(FormatResult(it), steamId)
+                            factionTopResults.Count < factionTop
+                                ? $"{factionTopResults.Count}/{factionTop}"
+                                : factionTop.ToString()
+                        ), playerSteamId);
+                        factionTopResults.ForEach(it =>
+                            SendMessage(FormatResult(it), playerSteamId)
                         );
-                        if (Config.MinUs != 0)
-                        {
-                            factionTopResults
-                                .Where(it =>
-                                    it.MainThreadMsPerTick < Config.MinMs &&
-                                    it.MainThreadMsPerTick > Config.MinMs * 0.75)
-                                .ForEach(it => SendNotificationTo(
-                                    $"Grid '{it.Name}'({FormatTime(it.MainThreadMsPerTick)}) in your faction very close to server limit({FormatTime(Config.MinMs)})",
-                                    steamId
-                                ));
-                        }
                     });
             }
-
-            //broadcast player's most lag grid
-            if (Config.PlayerMinUs != 0)
-            {
-                var playerResultsLoopUp = tuples.Where(it => it.gridOwner != 0)
-                    .ToLookup(it => it.gridOwner, it => it.result);
-                var needBroadcast = new List<(MyPlayer, ProfilerRequest.Result)>();
-                MySession.Static.Players.GetOnlinePlayers().Where(it => it.IsRealPlayer)
-                    .ForEach(player =>
-                    {
-                        var playerResults = playerResultsLoopUp[player.Identity.IdentityId].ToArray();
-                        var totalMs = playerResults.Sum(it => it.MainThreadMsPerTick);
-                        var steamId = player.Id.SteamId;
-                        SendMessage(
-                            $"Your grids total took {FormatTime(totalMs)}(server limit {FormatTime(Config.PlayerMinMs)})",
-                            steamId
-                        );
-                        // ReSharper disable once InvertIf
-                        if (totalMs > Config.PlayerMinMs && playerResults.Length > 0)
-                        {
-                            var mostLagGrid = playerResults[0];
-                            SendMessage($"Your most lag grid '{mostLagGrid.Name}' will be broadcast", steamId);
-                            needBroadcast.Add((player, mostLagGrid));
-                        }
-                    });
-                needBroadcast.ForEach(tuple =>
-                {
-                    var (player, result) = tuple;
-                    SendMessage(
-                        $"Player '{player.DisplayName}' exceeded server limit, following grid will be broadcast:");
-                    SendMessage(FormatResult(result));
-                });
-                prepareToBroadcast.AddRange(needBroadcast.Select(it => it.Item2));
-            }
-
-            //do actual broadcast
-            var distinctPrepareToBroadcast = prepareToBroadcast.Distinct(new ResultComparer()).ToArray();
-            if (distinctPrepareToBroadcast.Length != 0)
-            {
-                SendNotification($"Total {distinctPrepareToBroadcast.Length} grids being broadcast");
-            }
-
-            distinctPrepareToBroadcast.ForEach(Broadcast);
 
             //send result of controlling grid to player
             if (Config.SendResultOfControllingGrid)
@@ -350,18 +294,17 @@ namespace LagGridBroadcaster
                         var entity = player?.Controller?.ControlledEntity?.Entity;
                         if (entity == null) return;
                         if (!TryGetControllingGrid(entity, out var grid)) return;
-                        var tuple = tuples.FirstOrDefault(it => it.entityId == grid.EntityId);
-                        if (tuple.Equals(default)) return;
-                        var result = tuple.result;
+                        var measureResult = entityIdToResult.GetValueOrDefault(grid.EntityId);
+                        if (measureResult == null) return;
                         SendMessage(
-                            $"Your current controlling grid '{result.Name}' took {FormatTime(result.MainThreadMsPerTick)}",
+                            $"Your current controlling grid '{measureResult.EntityDisplayName}' took {FormatTime(measureResult.MainThreadTimePerTick)}",
                             player.Id.SteamId
                         );
                     });
             }
         }
 
-        private void Broadcast(ProfilerRequest.Result result)
+        private void Broadcast(MeasureResult result)
         {
             if (MyAPIGateway.Session == null) return;
             var gpsName = FormatResult(result);
@@ -370,20 +313,20 @@ namespace LagGridBroadcaster
                 name = gpsName,
                 DisplayName = gpsName,
                 // ReSharper disable once PossibleInvalidOperationException
-                coords = result.Position.Value,
+                coords = result.EntityCoords,
                 showOnHud = true,
                 color = Color.Purple,
-                description = $"{result.Description} ({FormatTime(result.MainThreadMsPerTick)})",
+                description = FormatResult(result),
                 entityId = 0,
                 isFinal = false
             });
+            //to all online players
             MySession.Static.Players.GetOnlinePlayers().Where(it => it.IsRealPlayer)
                 .ForEach(it =>
                 {
                     var identityId = it.Identity.IdentityId;
                     MyAPIGateway.Session.GPS.AddGps(identityId, gps);
-                    var list = Plugin.AddedGps.GetOrAdd(identityId, _ => new List<IMyGps>());
-                    lock (list) list.Add(gps);
+                    Plugin.AddedGps.AddOrUpdateList(identityId, gps);
                 });
         }
 
@@ -391,17 +334,6 @@ namespace LagGridBroadcaster
         {
             Context.Torch.CurrentSession.Managers.GetManager<IChatManagerServer>()
                 ?.SendMessageAsOther("LagGridBroadcaster", message, Color.Red, targetSteamId);
-        }
-
-        private bool checkInit()
-        {
-            if (ProfilerDataProxy.initialized)
-            {
-                return true;
-            }
-
-            Context.Respond("Profiler not init correctly");
-            return false;
         }
 
         private static void SendNotification(string message, int disappearTimeMs = 10000)
@@ -432,22 +364,28 @@ namespace LagGridBroadcaster
             return false;
         }
 
-        private static string FormatResult(ProfilerRequest.Result result)
+        private static MyPlayer GetPlayerById(long id)
         {
-            return $"{result.Name} ({FormatTime(result.MainThreadMsPerTick)})";
+            TryGetPlayerById(id, out var myPlayer);
+            return myPlayer;
+        }
+
+        private static string FormatResult(MeasureResult result)
+        {
+            return $"{result.EntityDisplayName} ({FormatTime(result.MainThreadTimePerTick)})";
         }
 
         private static bool TryGetControllingGrid(IMyEntity entity, out MyCubeGrid grid)
         {
             MyCubeGrid myCubeGrid;
-            var tmp = entity;
+            var temp = entity;
             do
             {
-                myCubeGrid = tmp as MyCubeGrid;
+                myCubeGrid = temp as MyCubeGrid;
                 if (myCubeGrid != null)
                     break;
-                tmp = tmp.Parent;
-            } while (tmp != null);
+                temp = temp.Parent;
+            } while (temp != null);
 
             if (myCubeGrid != null)
             {
