@@ -1,5 +1,5 @@
 ﻿# LagGridBroadcaster
-A [Torch](https://torchapi.net/) plugin that can broadcast most lag grid to all players.
+A [Torch](https://torchapi.net/) plugin that can broadcast most lag grid to all players(add gps to player).
 
 # Dependency
 This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2f-4571-af1c-88c7921bc063), please make sure you have that plugin installed.
@@ -7,7 +7,7 @@ This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2
 # Command
 `laggrids help` Show help message
 
-`laggrids send [ticks]` Send the top X most lag grids to all players
+`laggrids send [seconds]` Send the top X most lag grids to all players(argument `seconds` for setting measure time, default is 15)
 
 `laggrids list` List latest measure results
 

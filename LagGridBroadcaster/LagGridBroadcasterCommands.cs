@@ -45,7 +45,7 @@ namespace LagGridBroadcaster
         {
             var s = string.Join(Environment.NewLine, "Available commands:",
                 "!laggrids help - Show help message",
-                "!laggrids send [ticks] - Send the top X most lag grids to all players",
+                "!laggrids send [seconds] - Send the top X most lag grids to all players",
                 "!laggrids list - List latest measure results",
                 "!laggrids get - Get latest result of the grid you're currently controlling",
                 "!laggrids cleangps - Cleans GPS markers created by LagGridBroadcaster"
@@ -56,19 +56,17 @@ namespace LagGridBroadcaster
         /// <summary>
         /// Send the top X most lag grids to all players
         /// </summary>
-        /// <param name="ticks">Measure how many ticks</param>
+        /// <param name="seconds">Measure how many seconds</param>
         [Command("send", "Send the top X most lag grids to all players")]
         [Permission(MyPromoteLevel.Admin)]
-        public void Send(ulong ticks = 900)
+        public void Send(uint seconds = 15)
         {
             //validate
-            if (ticks == 0)
+            if (seconds == 0)
             {
-                Context.Respond("ticks must greater than zero");
+                Context.Respond("seconds must greater than zero");
                 return;
             }
-
-            var seconds = ticks / 60.0;
 
             new Thread(async () =>
             {
@@ -78,7 +76,7 @@ namespace LagGridBroadcaster
                     using (var profiler = new GridProfiler(mask))
                     using (ProfilerResultQueue.Profile(profiler))
                     {
-                        Context.Respond($"Started profiling grids, result in {ticks}ticks");
+                        Context.Respond($"Started profiling grids, result in {seconds}s");
 
                         var startTick = MySandboxGame.Static.SimulationFrameCounter;
                         profiler.MarkStart();
@@ -86,7 +84,8 @@ namespace LagGridBroadcaster
 
                         var result = profiler.GetResult();
                         var endTick = MySandboxGame.Static.SimulationFrameCounter;
-                        Context.Respond("Profiling finish");
+                        var ticks = endTick - startTick;
+                        Context.Respond($"Profiling finish in {ticks}ticks");
                         CleanGps();
                         OnProfilerRequestFinished(result, endTick - startTick);
                     }
