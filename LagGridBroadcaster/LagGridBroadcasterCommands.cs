@@ -204,12 +204,13 @@ namespace LagGridBroadcaster
                 var globalTopResults = measureResults.Where(it => it.MainThreadTimePerTick >= minMs)
                     .Where(measureResult =>
                     {
+                        if (factionMemberDistance == 0) return true;
                         //any faction member close to this grid
                         var factionMembers = measureResult.FactionId == null
                             ? new List<MyPlayer> {GetPlayerById(measureResult.PlayerIdentityId)}
                             : MySession.Static.Factions[measureResult.FactionId.Value].Members.Keys
                                 .Select(GetPlayerById);
-                        return factionMembers.Any(it =>
+                        return factionMembers.Where(it => it != null).Any(it => //only online faction member
                             Vector3.Distance(measureResult.EntityCoords, it.GetPosition()) <= factionMemberDistance
                         );
                     })
