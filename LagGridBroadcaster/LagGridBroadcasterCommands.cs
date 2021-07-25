@@ -162,17 +162,11 @@ namespace LagGridBroadcaster
 
         private void OnProfilerRequestFinished(BaseProfilerResult<MyCubeGrid> result, ulong ticks)
         {
-            //TODO GetTopEntities() cause System.MissingMethodException, why?
-            var entitiesFieldInfo = typeof(BaseProfilerResult<MyCubeGrid>)
-                .GetField("_entities", BindingFlags.NonPublic | BindingFlags.Instance);
-            // ReSharper disable once PossibleNullReferenceException
-            var measureResults = ((IReadOnlyDictionary<MyCubeGrid, ProfilerEntry>) entitiesFieldInfo.GetValue(
-                    result.MapKeys(myCubeGrid =>
-                        MyCubeGridGroups.Static.Logical.GetGroupNodes(myCubeGrid).MaxBy(it => it.BlocksPCU)
-                    )
-                ))
-                .Where(it => it.Value.MainThreadTime != 0)
-                .Select(it => new MeasureResult(it.Key, it.Value, ticks))
+            var measureResults = result.MapKeys(myCubeGrid =>
+                    MyCubeGridGroups.Static.Logical.GetGroupNodes(myCubeGrid).MaxBy(it => it.BlocksPCU)
+                ).GetTopEntities()
+                .Where(it => it.Entity.MainThreadTime != 0)
+                .Select(it => new MeasureResult(it.Key, it.Entity, ticks))
                 .Where(it => it.PlayerIdentityId != 0)
                 .OrderByDescending(it => it.MainThreadTimePerTick)
                 .ToList();
