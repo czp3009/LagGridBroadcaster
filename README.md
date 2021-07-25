@@ -1,6 +1,8 @@
 ﻿# LagGridBroadcaster
 A [Torch](https://torchapi.net/) plugin that can broadcast most lag grid to all players(add gps to player).
 
+https://torchapi.net/plugins/item/dd316db4-5d89-4db2-aa47-dac2a1a0ea64
+
 # Dependency
 This plugin is base on [Profiler](https://torchapi.net/plugins/item/da82de0f-9d2f-4571-af1c-88c7921bc063), please make sure you have that plugin installed.
 
