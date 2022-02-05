@@ -13,7 +13,7 @@ namespace LagGridBroadcaster
             }
             else
             {
-                dictionary.Add(key, new List<TValue> {value});
+                dictionary.Add(key, new List<TValue> { value });
             }
         }
     }

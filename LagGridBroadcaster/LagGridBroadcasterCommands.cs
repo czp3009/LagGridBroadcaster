@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Basics;
@@ -35,7 +33,7 @@ namespace LagGridBroadcaster
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private LagGridBroadcasterPlugin Plugin => (LagGridBroadcasterPlugin) Context.Plugin;
+        private LagGridBroadcasterPlugin Plugin => (LagGridBroadcasterPlugin)Context.Plugin;
         private LagGridBroadcasterConfig Config => Plugin.Config;
 
         [Command("help", "Show help message")]
@@ -68,11 +66,11 @@ namespace LagGridBroadcaster
                 return;
             }
 
-            new Thread(async () =>
+            async void ProfileAndCatch()
             {
                 try
                 {
-                    var mask = new GameEntityMask(null, null, null);
+                    var mask = new GameEntityMask();
                     using (var profiler = new GridProfiler(mask))
                     using (ProfilerResultQueue.Profile(profiler))
                     {
@@ -87,7 +85,7 @@ namespace LagGridBroadcaster
                         var ticks = endTick - startTick;
                         Context.Respond($"Profiling finish in {ticks}ticks");
                         CleanGps();
-                        OnProfilerRequestFinished(result, endTick - startTick);
+                        OnProfilerRequestFinished(result, ticks);
                     }
                 }
                 catch (Exception e)
@@ -95,7 +93,9 @@ namespace LagGridBroadcaster
                     Log.Error(e);
                     Context.Respond($"Error occured: {e.Message}");
                 }
-            }).Start();
+            }
+
+            ProfileAndCatch();
         }
 
         [Command("list", "List latest measure results")]
@@ -189,7 +189,7 @@ namespace LagGridBroadcaster
 
             //global top x grids
             var noOutputWhileEmptyResult = Config.NoOutputWhileEmptyResult;
-            var top = (int) Config.Top;
+            var top = (int)Config.Top;
             if (top != 0)
             {
                 var minMs = Config.MinMs;
@@ -201,7 +201,7 @@ namespace LagGridBroadcaster
                         if (factionMemberDistance == 0) return true;
                         //any faction member close to this grid
                         var factionMembers = measureResult.FactionId == null
-                            ? new List<MyPlayer> {GetPlayerById(measureResult.PlayerIdentityId)}
+                            ? new List<MyPlayer> { GetPlayerById(measureResult.PlayerIdentityId) }
                             : MySession.Static.Factions[measureResult.FactionId.Value].Members.Keys
                                 .Select(GetPlayerById);
                         return factionMembers.Where(it => it != null).Any(it => //only online faction member
@@ -228,7 +228,7 @@ namespace LagGridBroadcaster
             }
 
             //send factionTop to faction members
-            var factionTop = (int) Config.FactionTop;
+            var factionTop = (int)Config.FactionTop;
             if (factionTop != 0)
             {
                 var playerIdentityIdToResult = new Dictionary<long, List<MeasureResult>>();
