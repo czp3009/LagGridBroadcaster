@@ -1,4 +1,5 @@
 ﻿using Torch;
+using VRageMath; // Usando VRageMath.Color para compatibilidade com Space Engineers
 
 namespace LagGridBroadcaster
 {
@@ -13,6 +14,9 @@ namespace LagGridBroadcaster
         private bool _sendResultOfControllingGrid = true;
         private uint _top = 1;
         private bool _writeToFile = true;
+        private int _red = 255;   // Valor padrão
+        private int _green = 0;   // Valor padrão
+        private int _blue = 0;    // Valor padrão
 
         public uint Top
         {
@@ -63,5 +67,25 @@ namespace LagGridBroadcaster
             get => _resultFileName;
             set => SetValue(ref _resultFileName, value);
         }
+
+        public int Red
+        {
+            get => _red;
+            set => SetValue(ref _red, value);
+        }
+
+        public int Green
+        {
+            get => _green;
+            set => SetValue(ref _green, value);
+        }
+
+        public int Blue
+        {
+            get => _blue;
+            set => SetValue(ref _blue, value);
+        }
+
+        public Color GpsIconColor => new Color(Red, Green, Blue);
     }
 }
