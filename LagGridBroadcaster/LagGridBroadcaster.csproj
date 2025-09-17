@@ -30,11 +30,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Profiler, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <HintPath>$(SolutionDir)\Profiler\Profiler.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xaml" />
+    <Reference Include="VRage.Ansel">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Ansel.dll</HintPath>
+    </Reference>
+    <Reference Include="VRage.EOS">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.EOS.dll</HintPath>
+    </Reference>
+    <Reference Include="VRage.EOS.XmlSerializers">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.EOS.XmlSerializers.dll</HintPath>
+    </Reference>
+    <Reference Include="VRage.Math.XmlSerializers">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Math.XmlSerializers.dll</HintPath>
+    </Reference>
+    <Reference Include="VRage.Mod.Io">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Mod.Io.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="System.Windows.Presentation" />
     <Reference Include="PresentationCore" />
@@ -42,27 +62,27 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Sandbox.Common">
-      <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Common.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\Sandbox.Common.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Game">
-      <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Game.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\Sandbox.Game.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Graphics">
-      <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Graphics.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\Sandbox.Graphics.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SpaceEngineers.Game">
-      <HintPath>$(SolutionDir)\GameBinaries\SpaceEngineers.Game.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.Game.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SpaceEngineers.ObjectBuilders">
-      <HintPath>$(SolutionDir)\GameBinaries\SpaceEngineers.ObjectBuilders.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.ObjectBuilders.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SpaceEngineers.ObjectBuilders.XmlSerializers">
-      <HintPath>$(SolutionDir)\GameBinaries\SpaceEngineers.ObjectBuilders.XmlSerializers.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.ObjectBuilders.XmlSerializers.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Torch">
@@ -78,65 +98,59 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="HavokWrapper">
-      <HintPath>$(SolutionDir)\GameBinaries\HavokWrapper.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\HavokWrapper.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Audio">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Audio.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Audio.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Dedicated">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Dedicated.dll</HintPath>
+      <HintPath>..\..\..\SteamLibrary\steamapps\common\SpaceEngineersDedicatedServer\DedicatedServer64\VRage.Dedicated.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Game">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Game.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Game.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Game.XmlSerializers">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Game.XmlSerializers.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Game.XmlSerializers.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Input">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Input.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Input.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Library">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Library.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Library.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Math">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Math.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Math.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.NativeWrapper">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.NativeWrapper.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.NativeWrapper.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Render">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Render.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Render.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Render11">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Render11.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Render11.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Scripting">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Scripting.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\SpaceEngineers\Bin64\VRage.Scripting.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="NLog">
       <HintPath>$(SolutionDir)\TorchBinaries\NLog.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Profiler">
-      <HintPath>$(SolutionDir)\Profiler\Profiler.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -159,6 +173,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="manifest.xml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\Profiler\Profiler.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="CreateDebugZip" BeforeTargets="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
